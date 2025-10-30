@@ -10,7 +10,7 @@ public interface EmployeeService {
     EmployeeResponse createEmployee(EmployeeRequest employeeRequest);
     EmployeeResponse findEmployeeById(Long id);
     EmployeeResponse updateEmployee(Long id,EmployeeRequest employeeRequest);
-    EmployeeResponse deleteEmployee(Long id);
+    void deleteEmployee(Long id);
     List<EmployeeResponse> findAllEmployee();
 
 }

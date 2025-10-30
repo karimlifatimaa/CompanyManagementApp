@@ -56,16 +56,48 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest employeeRequest) {
-        return null;
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + id));
+
+        employee.setFullName(employeeRequest.getFullName());
+        employee.setEmail(employeeRequest.getEmail());
+        employee.setSalary(employeeRequest.getSalary());
+        employee.setPosition(employeeRequest.getPosition());
+        Employee updatedEmployee = employeeRepository.save(employee);
+
+        EmployeeResponse response = new EmployeeResponse();
+        response.setId(updatedEmployee.getId());
+        response.setFullName(updatedEmployee.getFullName());
+        response.setEmail(updatedEmployee.getEmail());
+        response.setSalary(updatedEmployee.getSalary());
+        response.setPosition(updatedEmployee.getPosition());
+
+        return response;
     }
 
     @Override
-    public EmployeeResponse deleteEmployee(Long id) {
-        return null;
+    public void deleteEmployee(Long id) {
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + id));
+
+        employeeRepository.delete(employee);
+
     }
 
     @Override
     public List<EmployeeResponse> findAllEmployee() {
-        return List.of();
+        List<Employee> employees = employeeRepository.findAll();
+
+        return employees.stream().map(employee -> {
+            EmployeeResponse response = new EmployeeResponse();
+            response.setId(employee.getId());
+            response.setFullName(employee.getFullName());
+            response.setEmail(employee.getEmail());
+            response.setSalary(employee.getSalary());
+            response.setPosition(employee.getPosition());
+            return response;
+        }).toList();
     }
 }
