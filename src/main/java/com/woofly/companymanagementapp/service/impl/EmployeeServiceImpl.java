@@ -2,6 +2,7 @@ package com.woofly.companymanagementapp.service.impl;
 
 import com.woofly.companymanagementapp.dto.request.EmployeeRequest;
 import com.woofly.companymanagementapp.dto.response.EmployeeResponse;
+import com.woofly.companymanagementapp.exception.EmployeeAlreadyExistsException;
 import com.woofly.companymanagementapp.exception.EmployeeNotFoundException;
 import com.woofly.companymanagementapp.model.Employee;
 import com.woofly.companymanagementapp.repository.EmployeeRepository;
@@ -20,6 +21,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest employeeRequest) {
+        employeeRepository.findByEmail(employeeRequest.getEmail()).ifPresent(e -> {
+            throw new EmployeeAlreadyExistsException("Employee with email " + employeeRequest.getEmail() + " already exists");
+        });
         Employee employee = new Employee();
         employee.setFullName(employeeRequest.getFullName());
         employee.setEmail(employeeRequest.getEmail());
@@ -59,6 +63,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + id));
+
+        employeeRepository.findByEmail(employeeRequest.getEmail()).ifPresent(e -> {
+            throw new EmployeeAlreadyExistsException("Employee with email " + employeeRequest.getEmail() + " already exists");
+        });
 
         employee.setFullName(employeeRequest.getFullName());
         employee.setEmail(employeeRequest.getEmail());

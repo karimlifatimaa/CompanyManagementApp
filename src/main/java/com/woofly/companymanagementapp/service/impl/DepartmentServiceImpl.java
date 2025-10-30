@@ -2,6 +2,7 @@ package com.woofly.companymanagementapp.service.impl;
 
 import com.woofly.companymanagementapp.dto.request.DepartmentRequest;
 import com.woofly.companymanagementapp.dto.response.DepartmentResponse;
+import com.woofly.companymanagementapp.exception.DepartmentAlreadyExistsException;
 import com.woofly.companymanagementapp.exception.DepartmentNotFoundException;
 import com.woofly.companymanagementapp.model.Department;
 import com.woofly.companymanagementapp.repository.DepartmentRepository;
@@ -20,7 +21,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     public DepartmentResponse createDepartment(DepartmentRequest departmentRequest) {
-
+        departmentRepository.findByName(departmentRequest.getName()).ifPresent(d -> {
+            throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
+        });
         Department department = new Department();
         department.setName(departmentRequest.getName());
         department.setLocation(departmentRequest.getLocation());
@@ -51,6 +54,9 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     public DepartmentResponse updateDepartment(Long id, DepartmentRequest departmentRequest) {
         Department existDepartment = findDepartmentById(id);
+        departmentRepository.findByName(departmentRequest.getName()).ifPresent(d -> {
+            throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
+        });
         existDepartment.setName(departmentRequest.getName());
         existDepartment.setLocation(departmentRequest.getLocation());
         existDepartment.setPhoneNumber(departmentRequest.getPhoneNumber());
