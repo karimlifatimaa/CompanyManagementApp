@@ -9,4 +9,5 @@ public class EmployeeResponse {
     private String position;
     private String email;
     private Double salary;
+    private Long departmentId;
 }

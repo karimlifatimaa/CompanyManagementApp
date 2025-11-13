@@ -62,6 +62,18 @@ public class EmployeeController {
         return ResponseEntity.ok(employees);
     }
 
+    @Operation(summary = "Şöbə ID-sinə görə employeeləri gətirmək", description = "Verilən şöbə ID-sinə əsasən employeelərin siyahısını qaytarır.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Uğurlu cavab"),
+            @ApiResponse(responseCode = "404", description = "Şöbə tapılmadı"),
+            @ApiResponse(responseCode = "500", description = "Server xətası")
+    })
+    @GetMapping("/department/{departmentId}")
+    public ResponseEntity<List<EmployeeResponse>> findEmployeesByDepartmentId(@PathVariable Long departmentId) {
+        List<EmployeeResponse> employees = employeeService.findEmployeesByDepartmentId(departmentId);
+        return ResponseEntity.ok(employees);
+    }
+
     @Operation(summary = "Employee məlumatını yeniləmək", description = "Verilən ID-yə əsasən employee məlumatını yeniləyir.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Employee uğurla yeniləndi"),

@@ -1,10 +1,9 @@
 package com.woofly.companymanagementapp.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -15,5 +14,8 @@ public class Department {
     private String name;
     private String location;
     private String phoneNumber;
+
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Employee> employees;
 
 }

@@ -13,5 +13,6 @@ public interface EmployeeService {
     EmployeeResponse updateEmployee(Long id,EmployeeRequest employeeRequest) throws EmployeeNotFoundException;
     void deleteEmployee(Long id) throws EmployeeNotFoundException;
     List<EmployeeResponse> findAllEmployee();
+    List<EmployeeResponse> findEmployeesByDepartmentId(Long departmentId);
 
 }
