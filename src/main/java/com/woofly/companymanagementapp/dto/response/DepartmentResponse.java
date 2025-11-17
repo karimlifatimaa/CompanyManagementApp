@@ -14,5 +14,5 @@ public class DepartmentResponse {
     private String name;
     private String location;
     private String phoneNumber;
-    // private List<EmployeeResponse> employees;
+    private List<EmployeeResponse> employees;
 }

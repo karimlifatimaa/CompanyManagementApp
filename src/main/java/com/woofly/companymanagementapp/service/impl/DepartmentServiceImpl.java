@@ -2,13 +2,16 @@ package com.woofly.companymanagementapp.service.impl;
 
 import com.woofly.companymanagementapp.dto.request.DepartmentRequest;
 import com.woofly.companymanagementapp.dto.response.DepartmentResponse;
-import com.woofly.companymanagementapp.dto.response.EmployeeResponse;
 import com.woofly.companymanagementapp.exception.DepartmentAlreadyExistsException;
 import com.woofly.companymanagementapp.exception.DepartmentNotFoundException;
+import com.woofly.companymanagementapp.mapper.DepartmentMapper;
 import com.woofly.companymanagementapp.model.Department;
 import com.woofly.companymanagementapp.repository.DepartmentRepository;
 import com.woofly.companymanagementapp.service.DepartmentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,123 +19,45 @@ import java.util.List;
 public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
+    private final DepartmentMapper departmentMapper;
 
-    public DepartmentServiceImpl(DepartmentRepository departmentRepository) {
+    public DepartmentServiceImpl(DepartmentRepository departmentRepository, DepartmentMapper departmentMapper) {
         this.departmentRepository = departmentRepository;
+        this.departmentMapper = departmentMapper;
     }
 
     public DepartmentResponse createDepartment(DepartmentRequest departmentRequest) {
         departmentRepository.findByName(departmentRequest.getName()).ifPresent(d -> {
             throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
         });
-        Department department = new Department();
-        department.setName(departmentRequest.getName());
-        department.setLocation(departmentRequest.getLocation());
-        department.setPhoneNumber(departmentRequest.getPhoneNumber());
-        departmentRepository.save(department);
-
-        DepartmentResponse departmentResponse = new DepartmentResponse();
-        departmentResponse.setId(department.getId());
-        departmentResponse.setName(department.getName());
-        departmentResponse.setLocation(department.getLocation());
-        departmentResponse.setPhoneNumber(department.getPhoneNumber());
-
-        return departmentResponse;
+        Department department = departmentMapper.toDepartment(departmentRequest);
+        Department savedDepartment = departmentRepository.save(department);
+        return departmentMapper.toDepartmentResponse(savedDepartment);
     }
 
-        public DepartmentResponse getDepartmentById(Long id) {
-
-            Department departmentNotFound = departmentRepository.findById(id).orElseThrow(
-
-                    () -> new DepartmentNotFoundException("Department not found")
-
-            );
-
-            // Explicitly initialize the lazy collection within the transactional context
-
-            departmentNotFound.getEmployees().size(); // Accessing the collection initializes it
-
-    
-
-            DepartmentResponse departmentResponse = new DepartmentResponse();
-
-            departmentResponse.setId(departmentNotFound.getId());
-
-            departmentResponse.setName(departmentNotFound.getName());
-
-            departmentResponse.setLocation(departmentNotFound.getLocation());
-
-            departmentResponse.setPhoneNumber(departmentNotFound.getPhoneNumber());
-
-//            departmentResponse.setEmployees(departmentNotFound.getEmployees().stream()
-//
-//                    .map(employee -> {
-//
-//                        EmployeeResponse empResponse = new EmployeeResponse();
-//
-//                        empResponse.setId(employee.getId());
-//
-//                        empResponse.setFullName(employee.getFullName());
-//
-//                        empResponse.setPosition(employee.getPosition());
-//
-//                        empResponse.setEmail(employee.getEmail());
-//
-//                        empResponse.setSalary(employee.getSalary());
-//
-//                        // departmentId is not set here to avoid circular dependency in DepartmentResponse
-//
-//                        return empResponse;
-//
-//                    }).toList());
-
-            return departmentResponse;
-
-        }
+    @Transactional(readOnly = true)
+    public DepartmentResponse getDepartmentById(Long id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentNotFoundException("Department not found"));
+        return departmentMapper.toDepartmentResponse(department);
+    }
 
     public DepartmentResponse updateDepartment(Long id, DepartmentRequest departmentRequest) {
         Department existDepartment = findDepartmentById(id);
         departmentRepository.findByName(departmentRequest.getName()).ifPresent(d -> {
-            throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
+            if (!d.getId().equals(id)) {
+                throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
+            }
         });
-        existDepartment.setName(departmentRequest.getName());
-        existDepartment.setLocation(departmentRequest.getLocation());
-        existDepartment.setPhoneNumber(departmentRequest.getPhoneNumber());
+        departmentMapper.updateDepartmentFromRequest(departmentRequest, existDepartment);
         Department updated = departmentRepository.save(existDepartment);
-
-        DepartmentResponse departmentResponse = new DepartmentResponse();
-        departmentResponse.setId(updated.getId());
-        departmentResponse.setName(updated.getName());
-        departmentResponse.setLocation(updated.getLocation());
-        departmentResponse.setPhoneNumber(updated.getPhoneNumber());
-        return departmentResponse;
-
-
+        return departmentMapper.toDepartmentResponse(updated);
     }
 
-    public List<DepartmentResponse> getAllDepartments() {
-        return departmentRepository.findAll().stream().map(department -> {
-            // Explicitly initialize the lazy collection within the transactional context
-            department.getEmployees().size(); // Accessing the collection initializes it
-
-            DepartmentResponse departmentResponse = new DepartmentResponse();
-            departmentResponse.setId(department.getId());
-            departmentResponse.setName(department.getName());
-            departmentResponse.setLocation(department.getLocation());
-            departmentResponse.setPhoneNumber(department.getPhoneNumber());
-//            departmentResponse.setEmployees(department.getEmployees().stream()
-//                    .map(employee -> {
-//                        EmployeeResponse empResponse = new EmployeeResponse();
-//                        empResponse.setId(employee.getId());
-//                        empResponse.setFullName(employee.getFullName());
-//                        empResponse.setPosition(employee.getPosition());
-//                        empResponse.setEmail(employee.getEmail());
-//                        empResponse.setSalary(employee.getSalary());
-//                        // departmentId is not set here to avoid circular dependency in DepartmentResponse
-//                        return empResponse;
-//                    }).toList());
-            return departmentResponse;
-        }).toList();
+    @Transactional(readOnly = true)
+    public Page<DepartmentResponse> getAllDepartments(Pageable pageable) {
+        return departmentRepository.findAll(pageable)
+                .map(departmentMapper::toDepartmentResponse);
     }
 
     public void deleteDepartment(Long id) {

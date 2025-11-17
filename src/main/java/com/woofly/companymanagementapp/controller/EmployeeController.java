@@ -9,10 +9,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -57,8 +65,11 @@ public class EmployeeController {
             @ApiResponse(responseCode = "500", description = "Server xətası")
     })
     @GetMapping
-    public ResponseEntity<List<EmployeeResponse>> findAllEmployees() {
-        List<EmployeeResponse> employees = employeeService.findAllEmployee();
+    public ResponseEntity<Page<EmployeeResponse>> findAllEmployees(
+            @ParameterObject // Swagger-də ayrı-ayrı xanalar (page, size, sort) kimi görünməsi üçün
+            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        Page<EmployeeResponse> employees = employeeService.findAllEmployee(pageable);
         return ResponseEntity.ok(employees);
     }
 
@@ -69,8 +80,13 @@ public class EmployeeController {
             @ApiResponse(responseCode = "500", description = "Server xətası")
     })
     @GetMapping("/department/{departmentId}")
-    public ResponseEntity<List<EmployeeResponse>> findEmployeesByDepartmentId(@PathVariable Long departmentId) {
-        List<EmployeeResponse> employees = employeeService.findEmployeesByDepartmentId(departmentId);
+    public ResponseEntity<Page<EmployeeResponse>> findEmployeesByDepartmentId(
+            @PathVariable Long departmentId,
+            @ParameterObject // Swagger-də ayrı xanalar yaradır
+            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+
+        Page<EmployeeResponse> employees = employeeService.findEmployeesByDepartmentId(departmentId, pageable);
         return ResponseEntity.ok(employees);
     }
 

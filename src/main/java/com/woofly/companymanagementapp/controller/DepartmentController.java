@@ -4,21 +4,30 @@ import com.woofly.companymanagementapp.dto.request.DepartmentRequest;
 import com.woofly.companymanagementapp.dto.response.DepartmentResponse;
 import com.woofly.companymanagementapp.exception.DepartmentAlreadyExistsException;
 import com.woofly.companymanagementapp.exception.DepartmentNotFoundException;
-import com.woofly.companymanagementapp.service.impl.DepartmentServiceImpl;
+import com.woofly.companymanagementapp.service.DepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+
 
 @RestController()
 @RequestMapping("/api/departments")
 public class DepartmentController {
-    private final DepartmentServiceImpl departmentService;
+    private final DepartmentService departmentService;
 
-    public DepartmentController(DepartmentServiceImpl departmentService) {
+    public DepartmentController(DepartmentService departmentService) {
         this.departmentService = departmentService;
     }
 
@@ -39,8 +48,11 @@ public class DepartmentController {
 
     @Operation(summary = "Bütün departmentləri gətirmək", description = "Bütün departmentlərin siyahısını qaytarır.")
     @GetMapping()
-    public ResponseEntity<List<DepartmentResponse>> getAllDepartments() {
-        List<DepartmentResponse> departments = departmentService.getAllDepartments();
+    public ResponseEntity<Page<DepartmentResponse>> getAllDepartments(
+            @ParameterObject// Bu annotasiya və Pageable obyekti sənin yazdığın bütün o for-loop işini özü görür
+            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        Page<DepartmentResponse> departments = departmentService.getAllDepartments(pageable);
         return new ResponseEntity<>(departments, HttpStatus.OK);
     }
 

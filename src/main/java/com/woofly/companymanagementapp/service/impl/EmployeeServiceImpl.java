@@ -5,25 +5,30 @@ import com.woofly.companymanagementapp.dto.response.EmployeeResponse;
 import com.woofly.companymanagementapp.exception.DepartmentNotFoundException;
 import com.woofly.companymanagementapp.exception.EmployeeAlreadyExistsException;
 import com.woofly.companymanagementapp.exception.EmployeeNotFoundException;
-import com.woofly.companymanagementapp.exception.DepartmentNotFoundException;
+import com.woofly.companymanagementapp.mapper.EmployeeMapper;
 import com.woofly.companymanagementapp.model.Department;
 import com.woofly.companymanagementapp.model.Employee;
 import com.woofly.companymanagementapp.repository.DepartmentRepository;
 import com.woofly.companymanagementapp.repository.EmployeeRepository;
 import com.woofly.companymanagementapp.service.EmployeeService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final EmployeeMapper employeeMapper;
 
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, DepartmentRepository departmentRepository) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, DepartmentRepository departmentRepository, EmployeeMapper employeeMapper) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
+        this.employeeMapper = employeeMapper;
     }
 
     @Override
@@ -36,120 +41,66 @@ public class EmployeeServiceImpl implements EmployeeService {
         Department department = departmentRepository.findById(employeeRequest.getDepartmentId())
                 .orElseThrow(() -> new DepartmentNotFoundException("Department not found with id: " + employeeRequest.getDepartmentId()));
 
-        Employee employee = new Employee();
-        employee.setFullName(employeeRequest.getFullName());
-        employee.setEmail(employeeRequest.getEmail());
-        employee.setSalary(employeeRequest.getSalary());
-        employee.setPosition(employeeRequest.getPosition());
-        employee.setDepartment(department); // Set the department
+        Employee employee = employeeMapper.toEmployee(employeeRequest);
+        employee.setDepartment(department);
 
         Employee dbEmployee = employeeRepository.save(employee);
 
-        EmployeeResponse employeeResponse = new EmployeeResponse();
-        employeeResponse.setId(dbEmployee.getId());
-        employeeResponse.setFullName(dbEmployee.getFullName());
-        employeeResponse.setEmail(dbEmployee.getEmail());
-        employeeResponse.setSalary(dbEmployee.getSalary());
-        employeeResponse.setPosition(dbEmployee.getPosition());
-        employeeResponse.setDepartmentId(dbEmployee.getDepartment().getId()); // Populate departmentId
-        return employeeResponse;
+        return employeeMapper.toEmployeeResponse(dbEmployee);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EmployeeResponse findEmployeeById(Long id) {
-
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(
-                        () -> new EmployeeNotFoundException( "Employee not found")
-                );
-
-        EmployeeResponse employeeResponse = new EmployeeResponse();
-        employeeResponse.setId(employee.getId());
-        employeeResponse.setFullName(employee.getFullName());
-        employeeResponse.setEmail(employee.getEmail());
-        employeeResponse.setSalary(employee.getSalary());
-        employeeResponse.setPosition(employee.getPosition());
-        employeeResponse.setDepartmentId(employee.getDepartment().getId());
-        return employeeResponse;
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee not found"));
+        return employeeMapper.toEmployeeResponse(employee);
     }
 
     @Override
+    @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest employeeRequest) {
-
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + id));
 
         employeeRepository.findByEmail(employeeRequest.getEmail()).ifPresent(e -> {
-            throw new EmployeeAlreadyExistsException("Employee with email " + employeeRequest.getEmail() + " already exists");
+            if (!e.getId().equals(id)) {
+                throw new EmployeeAlreadyExistsException("Employee with email " + employeeRequest.getEmail() + " already exists");
+            }
         });
 
         Department department = departmentRepository.findById(employeeRequest.getDepartmentId())
                 .orElseThrow(() -> new DepartmentNotFoundException("Department not found with id: " + employeeRequest.getDepartmentId()));
 
-        employee.setFullName(employeeRequest.getFullName());
-        employee.setEmail(employeeRequest.getEmail());
-        employee.setSalary(employeeRequest.getSalary());
-        employee.setPosition(employeeRequest.getPosition());
-        employee.setDepartment(department); // Update the department
+        employeeMapper.updateEmployeeFromRequest(employeeRequest, employee);
+        employee.setDepartment(department);
         Employee updatedEmployee = employeeRepository.save(employee);
 
-        EmployeeResponse response = new EmployeeResponse();
-        response.setId(updatedEmployee.getId());
-        response.setFullName(updatedEmployee.getFullName());
-        response.setEmail(updatedEmployee.getEmail());
-        response.setSalary(updatedEmployee.getSalary());
-        response.setPosition(updatedEmployee.getPosition());
-        response.setDepartmentId(updatedEmployee.getDepartment().getId()); // Populate departmentId
-
-        return response;
+        return employeeMapper.toEmployeeResponse(updatedEmployee);
     }
 
     @Override
     public void deleteEmployee(Long id) {
-
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + id));
-
         employeeRepository.delete(employee);
-
     }
 
     @Override
-    public List<EmployeeResponse> findAllEmployee() {
-        List<Employee> employees = employeeRepository.findAll();
-
-        return employees.stream().map(employee -> {
-            EmployeeResponse response = new EmployeeResponse();
-            response.setId(employee.getId());
-            response.setFullName(employee.getFullName());
-            response.setEmail(employee.getEmail());
-            response.setSalary(employee.getSalary());
-            response.setPosition(employee.getPosition());
-            if (employee.getDepartment() != null) {
-                response.setDepartmentId(employee.getDepartment().getId());
-            }
-            return response;
-        }).toList();
+    @Transactional(readOnly = true)
+    public Page<EmployeeResponse> findAllEmployee(Pageable pageable) {
+        return employeeRepository.findAll(pageable)
+                .map(employeeMapper::toEmployeeResponse);
     }
 
     @Override
-    public List<EmployeeResponse> findEmployeesByDepartmentId(Long departmentId) {
-        departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new DepartmentNotFoundException("Department not found with id: " + departmentId));
+    @Transactional(readOnly = true)
+    public Page<EmployeeResponse> findEmployeesByDepartmentId(Long departmentId, Pageable pageable) {
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new DepartmentNotFoundException("Department not found with id: " + departmentId);
+        }
 
-        List<Employee> employees = employeeRepository.findByDepartmentId(departmentId);
-
-        return employees.stream().map(employee -> {
-            EmployeeResponse response = new EmployeeResponse();
-            response.setId(employee.getId());
-            response.setFullName(employee.getFullName());
-            response.setEmail(employee.getEmail());
-            response.setSalary(employee.getSalary());
-            response.setPosition(employee.getPosition());
-            if (employee.getDepartment() != null) {
-                response.setDepartmentId(employee.getDepartment().getId());
-            }
-            return response;
-        }).toList();
+        return employeeRepository.findByDepartmentId(departmentId, pageable)
+                .map(employeeMapper::toEmployeeResponse);
     }
 }
