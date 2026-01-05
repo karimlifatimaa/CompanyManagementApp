@@ -29,7 +29,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     public DepartmentResponse createDepartment(DepartmentRequest departmentRequest) {
         departmentRepository.findByName(departmentRequest.getName()).ifPresent(d -> {
             throw new DepartmentAlreadyExistsException("Department with name " + departmentRequest.getName() + " already exists");
-        });
+    });
         Department department = departmentMapper.toDepartment(departmentRequest);
         Department savedDepartment = departmentRepository.save(department);
         return departmentMapper.toDepartmentResponse(savedDepartment);
@@ -37,7 +37,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Transactional(readOnly = true)
     public DepartmentResponse getDepartmentById(Long id) {
-        Department department = departmentRepository.findById(id)
+        Department department = departmentRepository.findById(id )
                 .orElseThrow(() -> new DepartmentNotFoundException("Department not found"));
         return departmentMapper.toDepartmentResponse(department);
     }

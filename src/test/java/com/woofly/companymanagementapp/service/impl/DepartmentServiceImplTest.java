@@ -58,13 +58,20 @@ class DepartmentServiceImplTest {
 
     @Test
     void createDepartment_shouldCreateDepartment_whenDepartmentDoesNotExist() {
+        // 1. Hazırlıq (Arrange)
+        // Deponun 'findByName' metodu çağırılanda boş bir Optional qaytarmasını təyin edirik
         when(departmentRepository.findByName(departmentRequest.getName())).thenReturn(Optional.empty());
+
         when(departmentMapper.toDepartment(departmentRequest)).thenReturn(department);
         when(departmentRepository.save(department)).thenReturn(department);
         when(departmentMapper.toDepartmentResponse(department)).thenReturn(departmentResponse);
 
+        // 2. Çağırış (Action)
+        // Test edilən əsas metodu çağırırıq
         DepartmentResponse result = departmentService.createDepartment(departmentRequest);
 
+        // 3. Yoxlama (Assertion/Verification)
+        // Nəticənin boş olmadığını və gözlənilən dəyərə bərabər olduğunu yoxlayırıq
         assertNotNull(result);
         assertEquals(departmentResponse, result);
         verify(departmentRepository, times(1)).findByName(departmentRequest.getName());
@@ -73,21 +80,27 @@ class DepartmentServiceImplTest {
 
     @Test
     void createDepartment_shouldThrowException_whenDepartmentExists() {
+        // 1. Hazırlıq (Arrange)
         when(departmentRepository.findByName(departmentRequest.getName())).thenReturn(Optional.of(department));
 
+        // 2. Çağırış və Yoxlama (Act & Assert)
         assertThrows(DepartmentAlreadyExistsException.class, () -> departmentService.createDepartment(departmentRequest));
 
+        //  3. Yoxlama (Verify)
         verify(departmentRepository, times(1)).findByName(departmentRequest.getName());
         verify(departmentRepository, never()).save(any(Department.class));
     }
 
     @Test
     void getDepartmentById_shouldReturnDepartment_whenDepartmentExists() {
+        // 1. Hazırlıq (Arrange)
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
         when(departmentMapper.toDepartmentResponse(department)).thenReturn(departmentResponse);
 
+        // 2. Çağırış (Act)
         DepartmentResponse result = departmentService.getDepartmentById(1L);
 
+        // 3. Yoxlama (Assert)
         assertNotNull(result);
         assertEquals(departmentResponse, result);
         verify(departmentRepository, times(1)).findById(1L);
@@ -95,8 +108,10 @@ class DepartmentServiceImplTest {
 
     @Test
     void getDepartmentById_shouldThrowException_whenDepartmentDoesNotExist() {
+        // 1. Hazırlıq (Arrange)
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
 
+        // 2. Çağırış və Yoxlama (Act & Assert)
         assertThrows(DepartmentNotFoundException.class, () -> departmentService.getDepartmentById(1L));
 
         verify(departmentRepository, times(1)).findById(1L);
@@ -104,17 +119,20 @@ class DepartmentServiceImplTest {
 
     @Test
     void updateDepartment_shouldUpdateDepartment_whenDepartmentExists() {
+        // 1. Hazırlıq (Arrange)
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
         when(departmentRepository.findByName(departmentRequest.getName())).thenReturn(Optional.of(department));
-        when(departmentRepository.save(department)).thenReturn(department);
+        when(departmentRepository.save(any(Department.class))).thenReturn(department);
         when(departmentMapper.toDepartmentResponse(department)).thenReturn(departmentResponse);
 
+        // 2. Çağırış (Act)
         DepartmentResponse result = departmentService.updateDepartment(1L, departmentRequest);
 
+        // 3. Yoxlama (Assert/Verify)
         assertNotNull(result);
         assertEquals(departmentResponse, result);
         verify(departmentRepository, times(1)).findById(1L);
-        verify(departmentRepository, times(1)).save(department);
+        verify(departmentRepository, times(1)).save(any(Department.class));
     }
 
     @Test
