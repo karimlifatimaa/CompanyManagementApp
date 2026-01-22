@@ -27,6 +27,8 @@ public class GitHubWebhookController {
             String repoName = root.path("repository").path("name").asText();
 
             log.info("======= GITHUB MƏLUMATI =======");
+
+
             log.info("Repozitoriya: {}", repoName);
             log.info("İstifadəçi: {}", pusherName);
             log.info("Branch: {}", branch);
