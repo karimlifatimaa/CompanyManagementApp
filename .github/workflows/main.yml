@@ -2,12 +2,12 @@ name: Company Management CI
 
 on:
   push:
-    branches: [ "master", "main", "development" ]
+    branches: [ "master","main", "development" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build: # Bura adını qısaltdıq
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,13 +21,13 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant Execute Permission
+      - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
 
-      - name: Build Application without Tests
-        run: ./gradlew build -x test  # Testləri qəti şəkildə keçirik
+      - name: Build and Test with Gradle
+        run: ./gradlew build
 
-      - name: Upload Artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-executable
