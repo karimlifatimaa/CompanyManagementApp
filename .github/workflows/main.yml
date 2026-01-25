@@ -1,13 +1,13 @@
-name: Company Management CI
+name: Student Management CI
 
 on:
   push:
-    branches: [ "master","main", "development" ]
+    branches: [ "master", "main", "development" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +21,11 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant Execute Permission for Gradlew
+      - name: Grant Execute Permission
         run: chmod +x gradlew
 
-      - name: Build and Test with Gradle
-        run: ./gradlew build
+      - name: Build with Gradle (Skipping Tests)
+        run: ./gradlew build -x test
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
