@@ -2,7 +2,7 @@ name: Company Management CI
 
 on:
   push:
-    branches: [ "main", "development" ]
+    branches: [ "master","main", "development" ]
   pull_request:
     branches: [ "main" ]
 
