@@ -11,7 +11,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Company Management ")
+                        .title("Company Management  ")
                         .version("0.0.1-SNAPSHOT ")
                         .description("Şirkət İdarəetmə Tətbiqinin API sənədləşdirilməsi")
                 );
